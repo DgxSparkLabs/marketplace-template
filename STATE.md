@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-07-27).** This file describes the pre-cleanup repo and is preserved as history. Current session memory: [`RESUME_HERE_2026-07-27.md`](RESUME_HERE_2026-07-27.md); current operational docs: `main` of DgxSparkLabs/marketplace-template.
+
 # STATE
 
 > Live within-session truth. Pair with `HANDOFF.md` (between-sessions), `PITFALLS.md` (specific bug→fix entries), and `docs/LESSONS.md` (working-practice lessons — read before any generator/CI/layout change).
