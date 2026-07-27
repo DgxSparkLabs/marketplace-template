@@ -3,7 +3,7 @@
 FILE-stage rules run once per file under the scanned tree, regardless of
 which capability folder it sits in — all three are constructs=ALL, because a
 markdown or JSON file of the NEXT construct type needs these checks exactly
-as much as a skill's does. ``formerly`` codes are the retired S-series ids.
+as much as a skill's does.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ def _ce_dr(root: Path) -> None:
 
 
 @lint_rule("content/description-required", stage=Stage.FILE, constructs=ALL,
-           applies_to="any markdown file with frontmatter", formerly="S1",
+           applies_to="any markdown file with frontmatter",
            requirement="Declares a non-empty `description`.",
            why="It is both the relevance hint the agent reads and the "
                "marketplace catalog line; an entry without one is unusable "
@@ -46,7 +46,7 @@ def _ce_jp(root: Path) -> None:
 
 
 @lint_rule("content/json-parses", stage=Stage.FILE, constructs=ALL,
-           applies_to="any JSON file in a source folder", formerly="S2",
+           applies_to="any JSON file in a source folder",
            requirement="Parses as valid JSON.",
            why="A malformed config is skipped at load time with the reason "
                "visible only in debug output.")
@@ -68,7 +68,7 @@ def _ce_bf(root: Path) -> None:
 
 
 @lint_rule("content/bundled-file-exists", stage=Stage.FILE, constructs=ALL,
-           applies_to="bundled-file references in JSON", formerly="S3",
+           applies_to="bundled-file references in JSON",
            requirement="Every `${CLAUDE_PLUGIN_ROOT}/<path>` reference resolves "
                        "to a file that exists in the folder.",
            why="Catches the 'config points at a script nobody committed' "

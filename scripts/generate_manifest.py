@@ -264,8 +264,7 @@ def _write_lint_rules_doc() -> None:
     A("")
     A(f"**{len(LINT_RULES)} rules.** Every failure message quotes its rule id, "
       "so the id in an error is the id to look up here. `error` blocks "
-      "publishing; `warning` is advisory. A `formerly` line gives the "
-      "retired short code the rule replaced.")
+      "publishing; `warning` is advisory.")
     A("")
     A("## Table of contents")
     A("")
@@ -292,9 +291,6 @@ def _write_lint_rules_doc() -> None:
               + ("" if r.severity == "error"
                  else " - advisory, does not block publishing"))
             A("")
-            if r.formerly:
-                A(f"**Formerly:** `{r.formerly}`")
-                A("")
             A(f"**Why:** {r.why}")
             A("")
             A("**You will see:**")

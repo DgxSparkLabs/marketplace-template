@@ -151,7 +151,7 @@ This page states effects in those terms rather than naming a product, because a 
 - **Harness** — the plugin prefix always remains; the bare `/fancy` form resolves only while that name is unambiguous.
 - **Agent** — changes what the skill is called, not whether the agent may use it.
 
-In the multi layout we require `name` to match its folder name, so one skill can never end up with two user-visible names (`hygiene/folder-matches-name` in [section 8](#8-what-we-check-before-publishing)).
+In the multi layout we require `name` to match its folder name, so one skill can never end up with two user-visible names ([hygiene/folder-matches-name](../../_generated/LINTING_RULES.md#hygienefolder-matches-name)).
 
 ### 5.2 Discovery
 
@@ -338,8 +338,6 @@ Every failure message quotes its rule id, and the id itself says what went wrong
 src/skills/My_Skill: folder name is not kebab-case (naming/folder-kebab-case)
                                                     ^^^^^^^^^^^^^^^^^^^^^^^^
 ```
-
-Rules carry a `formerly:` line for their retired short codes (N2.1, R6, …), so an id found in an old log still resolves.
 
 Run them yourself before pushing:
 

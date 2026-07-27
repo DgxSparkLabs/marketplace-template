@@ -9,9 +9,7 @@ scripts/lint.py).
 Validates:
   - lint flags missing description, invalid JSON, a missing
     ${CLAUDE_PLUGIN_ROOT} reference, and a non-kebab instance dir; passes on
-    well-formed sources AND on the real src/ tree. Assertions name the NEW
-    topic/slug rule ids; each id's `formerly` code is noted inline so a
-    reader holding an old log can still find the test.
+    well-formed sources AND on the real src/ tree.
   - new_construct's kebab guard and example-template selection.
 """
 from __future__ import annotations
@@ -28,7 +26,6 @@ import lint  # noqa: E402
 import new_construct  # noqa: E402
 from constructs import CONSTRUCTS  # noqa: E402
 from utils import SRC  # noqa: E402
-
 
 class TestLintCli(unittest.TestCase):
     def test_good_skill_passes(self):
@@ -48,7 +45,7 @@ class TestLintCli(unittest.TestCase):
                 "---\nname: My Bad Skill\ndescription: x\n---\nbody\n",
                 encoding="utf-8",
             )
-            # formerly N4.1
+
             self.assertTrue(any("naming/skill-name-kebab-case" in p for p in lint.lint([d])))
 
     def test_duplicate_component_names_flagged(self):
@@ -61,7 +58,7 @@ class TestLintCli(unittest.TestCase):
                     "---\nname: same\ndescription: x\n---\nbody\n",
                     encoding="utf-8",
                 )
-            # formerly N4.3
+
             self.assertTrue(any("naming/skill-name-unique" in p for p in lint.lint([d])))
 
     def test_overlong_instance_dir_flagged(self):
@@ -72,7 +69,7 @@ class TestLintCli(unittest.TestCase):
                 "---\nname: x\ndescription: x\n---\nbody\n",
                 encoding="utf-8",
             )
-            # formerly N2.2
+
             self.assertTrue(any("naming/folder-length" in p for p in lint.lint([d])))
 
     def test_source_claude_plugin_dir_flagged(self):
@@ -86,7 +83,7 @@ class TestLintCli(unittest.TestCase):
             (d / ".claude-plugin" / "plugin.json").write_text(
                 '{"description": "x"}', encoding="utf-8"
             )
-            self.assertTrue(  # formerly R6
+            self.assertTrue(
                 any("hygiene/no-packaging-in-source" in p for p in lint.lint([d]))
             )
 
@@ -101,7 +98,7 @@ class TestLintCli(unittest.TestCase):
             (d / ".metadata-SKILL.toml").write_text(
                 'description = "x"\nname = "stale-name"\n', encoding="utf-8"
             )
-            self.assertTrue(  # formerly R6
+            self.assertTrue(
                 any("hygiene/metadata-keys" in p for p in lint.lint([d]))
             )
 
@@ -114,7 +111,7 @@ class TestLintCli(unittest.TestCase):
                 encoding="utf-8",
             )
             (d / ".metadata-SKILL.toml").write_text("not = = toml", encoding="utf-8")
-            self.assertTrue(  # formerly R6
+            self.assertTrue(
                 any("hygiene/metadata-keys" in p for p in lint.lint([d]))
             )
 
@@ -127,11 +124,11 @@ class TestLintCli(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assertTrue(
-                any("hygiene/folder-matches-name" in p for p in lint.lint([sd.parent.parent]))  # formerly R8
+                any("hygiene/folder-matches-name" in p for p in lint.lint([sd.parent.parent]))
             )
 
     def test_real_marketplace_identity_passes(self):
-        # The identity rules (formerly N1.x) run against the repo's real
+        # The identity rules run against the repo's real
         # .metadata-MARKETPLACE.toml in every lint() call. Filter by RULE ID,
         # not by message prefix — messages start with a path, so a prefix
         # filter would match nothing and pass vacuously.
@@ -183,7 +180,6 @@ class TestLintCli(unittest.TestCase):
         # The shipped sources must pass their own validator.
         self.assertEqual(lint.lint([SRC]), [])
 
-
 class TestDriftGateReadOnly(unittest.TestCase):
     """Regression: --check must be read-only and deterministic (fail twice).
 
@@ -219,7 +215,6 @@ class TestDriftGateReadOnly(unittest.TestCase):
         finally:
             inv.write_bytes(original)
 
-
 class TestNewConstruct(unittest.TestCase):
     def test_kebab_regex(self):
         self.assertTrue(new_construct.KEBAB.match("telegram-notify"))
@@ -244,7 +239,6 @@ class TestNewConstruct(unittest.TestCase):
             content = new_construct._builtin_template("my-skill")
             self.assertIn("name: my-skill", content)
             self.assertIn("description:", content)
-
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

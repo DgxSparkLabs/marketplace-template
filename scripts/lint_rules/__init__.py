@@ -5,8 +5,8 @@ is generated-document order, and auto-discovery would make that depend on
 filesystem enumeration. Add a topic module, add its import here.
 
 Cross-registry validation happens at import time, so a broken registry
-cannot be partially used: a counterexample without a rule, or a ``formerly``
-alias colliding with a current id, fails the import — not some later run.
+cannot be partially used: a counterexample without a rule fails the import —
+not some later run.
 """
 
 from __future__ import annotations
@@ -35,10 +35,3 @@ if model._PENDING_COUNTEREXAMPLES:
         f"{sorted(model._PENDING_COUNTEREXAMPLES)}"
     )
 
-_alias_collisions = {
-    r.formerly for r in LINT_RULES if r.formerly
-} & set(LINT_RULES_BY_ID)
-if _alias_collisions:
-    raise ValueError(
-        f"'formerly' aliases collide with current rule ids: {sorted(_alias_collisions)}"
-    )

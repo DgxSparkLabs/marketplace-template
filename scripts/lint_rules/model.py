@@ -24,9 +24,7 @@ Two axes per rule:
     sentinel meaning "every construct, including ones that do not exist yet"
 
 Rule ids are ``topic/slug`` (e.g. ``naming/folder-kebab-case``) so the error
-message itself says what went wrong. ``formerly`` carries the retired short
-code (``N2.1`` …) so an id found in an old log still leads to the rule that
-replaced it; aliases are deliberately many-to-one (R6 became two rules).
+message itself says what went wrong.
 """
 
 from __future__ import annotations
@@ -191,7 +189,6 @@ class LintRule:
     check: Callable[[Context], Iterable[Violation]]
     counterexample: Callable[[Path], None]
     severity: Severity = Severity.ERROR
-    formerly: str | None = None      # retired short code; many-to-one allowed
 
     def applies_to_construct(self, construct: str | None) -> bool:
         # Membership, not identity: a hand-built frozenset({"*"}) that merely
@@ -226,8 +223,7 @@ def counterexample(rule_id: str):
 
 def lint_rule(rule_id: str, *, stage: Stage, constructs: frozenset[str],
               applies_to: str, requirement: str, why: str,
-              severity: Severity = Severity.ERROR,
-              formerly: str | None = None):
+              severity: Severity = Severity.ERROR):
     """Register a check as a lint rule. The decorated function IS the enforcement."""
 
     def deco(fn: Callable[[Context], Iterable[Violation]]):
@@ -257,7 +253,6 @@ def lint_rule(rule_id: str, *, stage: Stage, constructs: frozenset[str],
             id=rule_id, stage=stage, constructs=constructs,
             applies_to=applies_to, requirement=requirement, why=why,
             check=fn, counterexample=example, severity=severity,
-            formerly=formerly,
         ))
         return fn
 

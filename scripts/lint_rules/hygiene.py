@@ -1,10 +1,7 @@
 """hygiene.py — lint rules about repository shape.
 
 Source trees carry intent; packaging is produced by the generator. These
-rules keep the two from bleeding into each other. ``formerly`` codes are the
-retired R-series ids — R6 deliberately became TWO rules here (the universal
-no-packaging half and the skill-specific metadata half), both aliased to R6
-so an old log still leads a reader to everything the code became.
+rules keep the two from bleeding into each other.
 """
 
 from __future__ import annotations
@@ -26,7 +23,7 @@ def _ce_np(root: Path) -> None:
 
 
 @lint_rule("hygiene/no-packaging-in-source", stage=Stage.CAPABILITY, constructs=ALL,
-           applies_to="capability folder", formerly="R6",
+           applies_to="capability folder",
            requirement="Contains no generated-packaging directory (`.claude-plugin/`).",
            why="Packaging is generated; a hand-written packaging file looks "
                "authoritative while being ignored, which has misled readers "
@@ -51,7 +48,7 @@ def _ce_mk(root: Path) -> None:
 
 @lint_rule("hygiene/metadata-keys", stage=Stage.CAPABILITY,
            constructs=frozenset({"skill"}),
-           applies_to="`.metadata-SKILL.toml`", formerly="R6",
+           applies_to="`.metadata-SKILL.toml`",
            requirement="Parses as TOML and declares only `description` (a non-empty string).",
            why="Only `description` is read by the generator; any other key is "
                "dead weight that a reader will assume does something.")
@@ -85,7 +82,7 @@ def _ce_fm(root: Path) -> None:
 
 @lint_rule("hygiene/folder-matches-name", stage=Stage.CAPABILITY,
            constructs=frozenset({"skill"}),
-           applies_to="skill folder in the multi layout", formerly="R8",
+           applies_to="skill folder in the multi layout",
            requirement="The folder name equals the frontmatter `name`, when one is set.",
            why="Packaging is keyed by folder name while the agent surfaces the "
                "frontmatter name; if they disagree the same skill has two "

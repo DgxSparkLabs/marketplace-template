@@ -16,9 +16,9 @@ Everything in the repo is one of two things; nothing is both.
 
 - `src/.metadata-MARKETPLACE.toml` — marketplace identity (name, owner, repo URL, description). The one file a forker must edit.
 - `src/skills/<plugin>/` — skill content: `SKILL.md` (solo layout) or `skills/<name>/SKILL.md` (multi layout). Forks own this tree outright — adding, editing, and deleting anything (the shipped examples included) is supported; nothing in the machinery assumes a specific skill exists.
-- `src/skills/<plugin>/.metadata-SKILL.toml` — optional plugin-level metadata; required for the multi layout, where no single SKILL.md can supply the marketplace-listing `description`. Only `description` is read (rule `hygiene/metadata-keys`, formerly R6).
+- `src/skills/<plugin>/.metadata-SKILL.toml` — optional plugin-level metadata; required for the multi layout, where no single SKILL.md can supply the marketplace-listing `description`. Only `description` is read ([hygiene/metadata-keys](../_generated/LINTING_RULES.md#hygienemetadata-keys)).
 
-`.metadata-*.toml` is the convention for all operator-edited metadata: dot-prefixed like `.env` — a fork edits these files and ships its own values. Source trees never contain `.claude-plugin/`; that shape belongs exclusively to generated output (`hygiene/no-packaging-in-source`, formerly R6, rejects a source `.claude-plugin/` outright).
+`.metadata-*.toml` is the convention for all operator-edited metadata: dot-prefixed like `.env` — a fork edits these files and ships its own values. Source trees never contain `.claude-plugin/`; that shape belongs exclusively to generated output ([hygiene/no-packaging-in-source](../_generated/LINTING_RULES.md#hygieneno-packaging-in-source) rejects a source `.claude-plugin/` outright).
 
 **Generator owns (regenerated from scratch every run — hand-edits are lost):**
 
@@ -45,7 +45,7 @@ Phase numbering is deliberately sparse: the retired phases (1.5/2a/3/4/4.5/5.5/6
 
 ## The name chain (see issue #19 for the enforced standard)
 
-`src/.metadata-MARKETPLACE.toml` `name` → marketplace identity (after `@` in install commands); minus its `-marketplace` suffix → the **brand**. Install name = `skill-<srcdir>` (`generate_manifest.py`, marketplace entry). Slash namespace = `<brand>-skill-<srcdir>` (`constructs.py`, `_base_plugin_shape`). Component name = SKILL.md frontmatter `name:`. Enforcement: `scripts/lint.py` running the `scripts/lint_rules/` registry — `naming/*` and `hygiene/*` rules on sources before generation, `naming/plugin-id-*` on generated output after it (the retired short codes N1/N2/N4/R6/R8/N3/N5 survive as `formerly:` aliases in the generated list). `TestGeneratedPlugins.test_individual_plugin_name_is_unique_brand_namespace` double-covers the composed-name invariant.
+`src/.metadata-MARKETPLACE.toml` `name` → marketplace identity (after `@` in install commands); minus its `-marketplace` suffix → the **brand**. Install name = `skill-<srcdir>` (`generate_manifest.py`, marketplace entry). Slash namespace = `<brand>-skill-<srcdir>` (`constructs.py`, `_base_plugin_shape`). Component name = SKILL.md frontmatter `name:`. Enforcement: `scripts/lint.py` — every rule, its rationale, and a captured example failure are in [`_generated/LINTING_RULES.md`](../_generated/LINTING_RULES.md). `TestGeneratedPlugins.test_individual_plugin_name_is_unique_brand_namespace` double-covers the composed-name invariant.
 
 ## Verification chain
 

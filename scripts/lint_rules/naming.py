@@ -1,8 +1,7 @@
 """naming.py — lint rules about the names people type.
 
 Marketplace identity, capability folder names, skill names, and the composed
-identifiers of generated plugins. The naming standard originates in issue #19;
-``formerly`` codes are the retired N-series ids.
+identifiers of generated plugins.
 """
 
 from __future__ import annotations
@@ -41,7 +40,7 @@ def _ce_mk(root: Path) -> None:
 
 
 @lint_rule("naming/marketplace-kebab-case", stage=Stage.IDENTITY, constructs=ALL,
-           applies_to="marketplace name", formerly="N1.1",
+           applies_to="marketplace name",
            requirement="Is kebab-case.",
            why="The name appears in the install command users type; mixed case "
                "and underscores are easy to mistype and inconsistent across forks.")
@@ -57,7 +56,7 @@ def _ce_ms(root: Path) -> None:
 
 
 @lint_rule("naming/marketplace-suffix", stage=Stage.IDENTITY, constructs=ALL,
-           applies_to="marketplace name", formerly="N1.2",
+           applies_to="marketplace name",
            requirement="Ends in `-marketplace`.",
            why="The brand prefix used throughout generated output is derived by "
                "stripping that suffix; without it there is no brand to derive.")
@@ -75,7 +74,7 @@ def _ce_mb(root: Path) -> None:
 
 
 @lint_rule("naming/marketplace-brand", stage=Stage.IDENTITY, constructs=ALL,
-           applies_to="marketplace name", formerly="N1.3",
+           applies_to="marketplace name",
            requirement="The name with `-marketplace` removed is non-empty and kebab-case.",
            why="That remainder becomes the brand prefix on every published plugin.")
 def marketplace_brand(ctx: Context):
@@ -96,7 +95,7 @@ def _ce_mr(root: Path) -> None:
 
 
 @lint_rule("naming/marketplace-not-reserved", stage=Stage.IDENTITY, constructs=ALL,
-           applies_to="marketplace name", formerly="N1.4",
+           applies_to="marketplace name",
            requirement="Is not a reserved identity.",
            why="Some names are rejected outright by the CLI and others collide "
                "with built-in scopes; either way the marketplace fails to register.")
@@ -112,7 +111,7 @@ def _ce_ml(root: Path) -> None:
 
 
 @lint_rule("naming/marketplace-length", stage=Stage.IDENTITY, constructs=ALL,
-           applies_to="marketplace name", formerly="N1.5",
+           applies_to="marketplace name",
            requirement="Is 3 to 64 characters.",
            why="Keeps the install command a user types readable and typo-resistant.")
 def marketplace_length(ctx: Context):
@@ -132,7 +131,7 @@ def _ce_fk(root: Path) -> None:
 
 
 @lint_rule("naming/folder-kebab-case", stage=Stage.CAPABILITY, constructs=ALL,
-           applies_to="capability folder name", formerly="N2.1",
+           applies_to="capability folder name",
            requirement="Is kebab-case.",
            why="The folder name flows into the published plugin name and the "
                "install command; it has to survive being typed by hand.")
@@ -147,7 +146,7 @@ def _ce_fl(root: Path) -> None:
 
 
 @lint_rule("naming/folder-length", stage=Stage.CAPABILITY, constructs=ALL,
-           applies_to="capability folder name", formerly="N2.2",
+           applies_to="capability folder name",
            requirement="Is at most 32 characters.",
            why="It is only one segment of a longer composed name; an overlong "
                "folder makes the full identifier unwieldy.")
@@ -168,7 +167,7 @@ def _ce_sk(root: Path) -> None:
 
 @lint_rule("naming/skill-name-kebab-case", stage=Stage.CAPABILITY,
            constructs=frozenset({"skill"}),
-           applies_to="skill name", formerly="N4.1",
+           applies_to="skill name",
            requirement="Is kebab-case.",
            why="It is the last segment of what a user types to invoke the skill.")
 def skill_name_kebab_case(ctx: Context):
@@ -184,7 +183,7 @@ def _ce_sl(root: Path) -> None:
 
 @lint_rule("naming/skill-name-length", stage=Stage.CAPABILITY,
            constructs=frozenset({"skill"}),
-           applies_to="skill name", formerly="N4.2",
+           applies_to="skill name",
            requirement="Is 1 to 32 characters.",
            why="Keeps the invocation typeable and the listing scannable.")
 def skill_name_length(ctx: Context):
@@ -205,7 +204,7 @@ def _ce_su(root: Path) -> None:
 
 @lint_rule("naming/skill-name-unique", stage=Stage.CAPABILITY,
            constructs=frozenset({"skill"}),
-           applies_to="skill name", formerly="N4.3",
+           applies_to="skill name",
            requirement="Is unique within its plugin.",
            why="Two skills with one name inside a single plugin cannot both be "
                "addressed; one wins silently.")
@@ -224,7 +223,7 @@ def _ce_bn(root: Path) -> None:
 
 @lint_rule("naming/avoids-builtin-name", stage=Stage.CAPABILITY,
            constructs=frozenset({"skill"}),
-           applies_to="skill name", formerly="N4.4",
+           applies_to="skill name",
            severity=Severity.WARNING,
            requirement="Does not shadow a built-in command name.",
            why="A shadowing name may resolve to the built-in instead of the "
@@ -246,7 +245,7 @@ def _ce_pu(root: Path) -> None:
 
 
 @lint_rule("naming/plugin-id-unique", stage=Stage.GENERATED, constructs=ALL,
-           applies_to="generated plugin identifier", formerly="N3",
+           applies_to="generated plugin identifier",
            requirement="Is unique across the marketplace.",
            why="Two plugins sharing an identifier means one is unreachable "
                "after install, with no error to explain why.")
@@ -274,7 +273,7 @@ def _ce_pc(root: Path) -> None:
 
 
 @lint_rule("naming/plugin-id-composed", stage=Stage.GENERATED, constructs=ALL,
-           applies_to="generated plugin identifier", formerly="N5",
+           applies_to="generated plugin identifier",
            requirement="Is composed as `<brand>-<type>-<folder>`.",
            why="The composed shape is what users see and type; a deviation "
                "silently changes the documented invocation.")

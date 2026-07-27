@@ -354,15 +354,6 @@ class TestLintRegistry(unittest.TestCase):
                     f"the CONSTRUCTS registry {sorted(known)}",
                 )
 
-    def test_formerly_aliases_resolve_and_do_not_collide(self):
-        """Every retired code maps to >=1 rule (many-to-one allowed — R6 maps
-        to two) and collides with no current id."""
-        from lint_rules import LINT_RULES, LINT_RULES_BY_ID
-        aliases = [r.formerly for r in LINT_RULES if r.formerly]
-        self.assertTrue(aliases, "expected formerly codes on migrated rules")
-        collisions = set(aliases) & set(LINT_RULES_BY_ID)
-        self.assertFalse(collisions, f"aliases colliding with current ids: {collisions}")
-
     def test_every_rule_reaches_the_generated_list(self):
         """Every declared rule has a section in _generated/LINTING_RULES.md."""
         from lint_rules import LINT_RULES
@@ -374,6 +365,37 @@ class TestLintRegistry(unittest.TestCase):
         self.assertEqual(
             missing, [], f"rules absent from _generated/LINTING_RULES.md: {missing}"
         )
+
+    def test_doc_anchors_into_the_rule_list_resolve(self):
+        """Every `LINTING_RULES.md#anchor` link in hand-written docs points at
+        a heading that the generated file actually contains.
+
+        Prose never explains a rule — it deep-links into the generated list.
+        That makes each link a contract with the generator's anchor scheme; a
+        renamed rule would rot the link silently without this check.
+        """
+        doc = (REPO_ROOT / "_generated" / "LINTING_RULES.md").read_text(encoding="utf-8")
+        valid = set()
+        for line in doc.splitlines():
+            if line.startswith("#"):
+                heading = line.lstrip("#").strip()
+                valid.add("".join(
+                    ch if (ch.isalnum() or ch == "-") else "-" if ch == " " else ""
+                    for ch in heading.lower()
+                ))
+        sources = [REPO_ROOT / "AGENTS.md", *sorted(
+            p for p in (REPO_ROOT / "docs").rglob("*.md")
+            if not any(part.startswith(".") for part in p.relative_to(REPO_ROOT / "docs").parts)
+        )]
+        pattern = re.compile(r"LINTING_RULES\.md#([A-Za-z0-9-]+)")
+        for src in sources:
+            for anchor in pattern.findall(src.read_text(encoding="utf-8")):
+                with self.subTest(doc=src.name, anchor=anchor):
+                    self.assertIn(
+                        anchor, valid,
+                        f"{src}: links LINTING_RULES.md#{anchor}, but the "
+                        f"generated file has no such heading",
+                    )
 
     def test_a_rule_cannot_be_declared_without_a_counterexample(self):
         """The decorator refuses an unproven rule — the mandate is structural."""
