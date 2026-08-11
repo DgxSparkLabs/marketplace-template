@@ -38,7 +38,7 @@ from platforms import (
     PLATFORMS,
     ClaudeCodePlatform,
 )
-from utils import MARKETPLACE_JSON, scan_source_dir
+from utils import MARKETPLACE_JSON, scan_source_dir, skill_components
 
 MARKETPLACE_TOML = REPO_ROOT / "src" / ".metadata-MARKETPLACE.toml"
 GENERATED_DIR = REPO_ROOT / "_generated" / "claude-code"
@@ -164,11 +164,13 @@ class TestGeneratedPlugins(unittest.TestCase):
                     )
 
     def test_skill_plugin_layouts(self):
-        """For every source skill plugin, the generated plugin.json's ``skills``
-        field matches the source filesystem layout.
+        """Both source layouts publish ONE generated shape.
 
-        - Solo (root ``SKILL.md`` at plugin root) → ``["./"]``.
-        - Multi (one or more ``skills/<x>/SKILL.md`` under ``skills/``) → ``["./skills/"]``.
+        Solo (root ``SKILL.md``) and multi (``skills/<x>/SKILL.md``) both emit
+        ``skills: ["./skills/"]`` with every skill under ``skills/``. A plugin
+        that declares its own root instead is what
+        ``hygiene/no-self-referential-skills-path`` forbids: portable consumers
+        resolve it to the plugin directory and copy the plugin into itself.
 
         Parameterized across every skill source plugin via
         ``scan_source_dir`` + ``subTest`` so a third skill plugin added
@@ -176,32 +178,42 @@ class TestGeneratedPlugins(unittest.TestCase):
         """
         skill = next(c for c in CONSTRUCTS.values() if isinstance(c, SkillConstruct))
         for source_name in scan_source_dir(skill.source_directory):
-            src = skill.source_directory / source_name
             gen_dir = GENERATED_DIR / f"skill-{source_name}"
             gen_pj = gen_dir / ".claude-plugin" / "plugin.json"
             with self.subTest(plugin=source_name):
                 data = json.loads(gen_pj.read_text(encoding="utf-8"))
-                if (src / "SKILL.md").exists():
-                    # Solo layout: skills=["./"], one SKILL.md at plugin root
-                    self.assertEqual(
-                        data["skills"], ["./"],
-                        f"solo skill {source_name}: skills field mismatch",
-                    )
+                self.assertEqual(
+                    data["skills"], ["./skills/"],
+                    f"skill {source_name}: skills field mismatch",
+                )
+                self.assertFalse(
+                    (gen_dir / "SKILL.md").exists(),
+                    f"skill {source_name}: SKILL.md must not sit at the plugin "
+                    f"root — it belongs under skills/<name>/",
+                )
+                skills_subdir = gen_dir / "skills"
+                self.assertTrue(
+                    any(skills_subdir.rglob("SKILL.md")),
+                    f"skill {source_name}: no SKILL.md under skills/",
+                )
+
+    def test_generated_skill_dir_matches_frontmatter_name(self):
+        """Every published skill folder is named for its frontmatter ``name``.
+
+        This is what makes the two names un-divergeable. Claude Code invokes by
+        frontmatter ``name``; APM and other portable consumers key on the
+        directory. Deriving the directory from the name means they agree by
+        construction rather than by a lint rule chasing them.
+        """
+        skill = next(c for c in CONSTRUCTS.values() if isinstance(c, SkillConstruct))
+        for source_name in scan_source_dir(skill.source_directory):
+            src = skill.source_directory / source_name
+            gen_dir = GENERATED_DIR / f"skill-{source_name}"
+            for comp in skill_components(src):
+                with self.subTest(plugin=source_name, skill=comp["name"]):
                     self.assertTrue(
-                        (gen_dir / "SKILL.md").exists(),
-                        f"solo skill {source_name}: SKILL.md missing at plugin root",
-                    )
-                else:
-                    # Multi layout: skills=["./skills/"], at least one SKILL.md
-                    # under a skills/<x>/ subdir
-                    self.assertEqual(
-                        data["skills"], ["./skills/"],
-                        f"multi skill {source_name}: skills field mismatch",
-                    )
-                    skills_subdir = gen_dir / "skills"
-                    self.assertTrue(
-                        any(skills_subdir.rglob("SKILL.md")),
-                        f"multi skill {source_name}: no SKILL.md under skills/",
+                        (gen_dir / "skills" / comp["name"] / "SKILL.md").exists(),
+                        f"{source_name}: expected skills/{comp['name']}/SKILL.md",
                     )
 
 class TestMarketplaceJson(unittest.TestCase):

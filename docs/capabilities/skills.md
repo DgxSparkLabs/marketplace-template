@@ -84,7 +84,7 @@ src/skills/<plugin>/                src/skills/<plugin>/
                                         └── <skill-b>/SKILL.md
 ```
 
-- **Solo** — the folder name names the skill, and its `description` is also the catalog line.
+- **Solo** — the folder names the *plugin*; the skill takes its name from the `SKILL.md` frontmatter `name`, falling back to the folder when none is set. Its `description` is also the catalog line. (The shipped example uses this: folder `example-single`, skill `hello`.)
 - **Multi** — several skills install as one unit. There is no single `SKILL.md` to take a catalog line from, so `.metadata-SKILL.toml` supplies it:
 
   ```toml
@@ -94,6 +94,8 @@ src/skills/<plugin>/                src/skills/<plugin>/
   `description` is the only key read from that file.
 
 Having both a root `SKILL.md` and a `skills/` subdirectory is an error — the generator cannot tell which shape you meant, and will say so.
+
+**Both shapes publish the same package.** Solo is an authoring convenience, not a packaging shape: the generator lifts a root `SKILL.md` into `skills/<name>/SKILL.md` so every published plugin has one layout. A published plugin never declares its skills at its own root — see [hygiene/no-self-referential-skills-path](../../_generated/LINTING_RULES.md#hygieneno-self-referential-skills-path) for what that would break.
 
 ## 4. Frontmatter: who defines it, and why you can use fields this page doesn't list
 
@@ -151,7 +153,7 @@ This page states effects in those terms rather than naming a product, because a 
 - **Harness** — the plugin prefix always remains; the bare `/fancy` form resolves only while that name is unambiguous.
 - **Agent** — changes what the skill is called, not whether the agent may use it.
 
-In the multi layout we require `name` to match its folder name, so one skill can never end up with two user-visible names ([hygiene/folder-matches-name](../../_generated/LINTING_RULES.md#hygienefolder-matches-name)).
+In the multi layout we require `name` to match its folder name, so one skill can never end up with two user-visible names ([hygiene/folder-matches-name](../../_generated/LINTING_RULES.md#hygienefolder-matches-name)). The solo layout is exempt because it cannot diverge: the folder there names the plugin, and the generator names the published skill folder *from* the frontmatter `name`.
 
 ### 5.2 Discovery
 

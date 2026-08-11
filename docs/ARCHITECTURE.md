@@ -22,7 +22,7 @@ Everything in the repo is one of two things; nothing is both.
 
 **Generator owns (regenerated from scratch every run — hand-edits are lost):**
 
-- `_generated/claude-code/<plugin>/` — the installable plugins, platform-namespaced. Claude Code is the only platform today; a revived platform (issues #28–#36) gets a sibling `_generated/<platform>/` and never mixes.
+- `_generated/claude-code/<plugin>/` — the installable plugins, platform-namespaced. Claude Code is the only platform today; a revived platform (issues #28–#36) gets a sibling `_generated/<platform>/` and never mixes. Both source layouts converge here on one shape — `skills/<skill-name>/SKILL.md` declared as `skills: ["./skills/"]` — so a published plugin never points at its own root.
 - `.claude-plugin/marketplace.json` — the manifest `claude plugin marketplace add` reads.
 - `_generated/CATALOG_AND_INSTALLATION_INSTRUCTIONS.md` — the catalog: every plugin, every install/removal path, invocation tables — rendered with this marketplace's identity.
 - `_generated/LINTING_RULES.md` — every lint rule this marketplace enforces, rendered from the `scripts/lint_rules/` registry. Each rule owns its check and a mandatory counterexample; `tests/test_marketplace.py` (`TestLintRegistry`) proves every rule reachable by executing that counterexample, so a rule cannot be published as enforced while being dead.

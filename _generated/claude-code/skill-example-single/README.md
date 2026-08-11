@@ -31,7 +31,7 @@ skills/example-single/
 └── README.md         ← you are here
 ```
 
-The generator detects "no `skills/` subdir + one root `SKILL.md`" and emits `skills: ["./"]` in the *generated* plugin manifest. The multi-skill counterpart lives at `skills/example-multi/`.
+The generator detects "no `skills/` subdir + one root `SKILL.md`" and packages it as `skills/hello/SKILL.md` — the folder is named for the frontmatter `name`, and the generated manifest declares `skills: ["./skills/"]`. So the solo layout is an authoring convenience: **both layouts publish the same shape**, and the source folder names the *plugin* while the frontmatter names the *skill*. The multi-skill counterpart lives at `skills/example-multi/`.
 
 ## Make your own
 

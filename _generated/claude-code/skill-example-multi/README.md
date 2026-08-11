@@ -34,7 +34,7 @@ skills/example-multi/
 └── README.md                ← you are here
 ```
 
-The generator detects the `skills/` subdir and emits `skills: ["./skills/"]` in the *generated* plugin manifest. The solo counterpart lives at `skills/example-single/`.
+The generator detects the `skills/` subdir and copies it through verbatim, declaring `skills: ["./skills/"]` in the *generated* plugin manifest. The solo layout compiles to this same shape, so what ships is identical either way — see the solo counterpart at `skills/example-single/`.
 
 ## Make your own
 
