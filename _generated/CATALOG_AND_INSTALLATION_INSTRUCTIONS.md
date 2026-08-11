@@ -99,13 +99,13 @@ Copy the skill source into your personal skills directory - no marketplace regis
 
 ```bash
 git clone https://github.com/DgxSparkLabs/marketplace-template /tmp/mp
-cp -r /tmp/mp/src/skills/example-single ~/.claude/skills/example-single
+cp -r /tmp/mp/src/skills/example-single ~/.claude/skills/hello
 ```
 
 ###### Deletion
 
 ```bash
-rm -rf ~/.claude/skills/example-single
+rm -rf ~/.claude/skills/hello
 ```
 
 ##### Invocation

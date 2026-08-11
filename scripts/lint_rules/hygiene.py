@@ -6,6 +6,7 @@ rules keep the two from bleeding into each other.
 
 from __future__ import annotations
 
+import json
 import tomllib
 from pathlib import Path
 
@@ -100,3 +101,41 @@ def folder_matches_name(ctx: Context):
             yield Violation(
                 sk, f"frontmatter name '{fm_name}' does not match folder '{d.name}'"
             )
+
+
+@counterexample("hygiene/no-self-referential-skills-path")
+def _ce_sr(root: Path) -> None:
+    fixtures.base(root)
+    d = fixtures.generated_plugin(root, "skill-alpha", "example-skill-alpha")
+    pj = d / ".claude-plugin" / "plugin.json"
+    data = json.loads(pj.read_text(encoding="utf-8"))
+    data["skills"] = ["./"]
+    pj.write_text(json.dumps(data), encoding="utf-8")
+
+
+# ``"./"`` resolves to the plugin root, so a consumer that stages each declared
+# path into a directory *under* that root copies the plugin into itself. Claude
+# Code tolerates it; portable consumers do not. Measured: `apm install` dies
+# with `maximum recursion depth exceeded` (microsoft/apm#2556). ``""``, ``"."``
+# and ``"/"`` all normalise to the same place, so all four are refused.
+@lint_rule("hygiene/no-self-referential-skills-path", stage=Stage.GENERATED,
+           constructs=ALL,
+           applies_to="generated plugin manifest `skills` path",
+           requirement="Points at a subdirectory, never at the plugin root.",
+           why="A path resolving to the plugin root makes a consumer copy the "
+               "plugin into itself; one such consumer crashes outright rather "
+               "than warning, so the skill silently never installs.")
+def no_self_referential_skills_path(ctx: Context):
+    for d in ctx.generated_plugin_dirs():
+        data = ctx.read_json(d / ".claude-plugin" / "plugin.json")
+        if not isinstance(data, dict):
+            continue
+        declared = data.get("skills")
+        paths = declared if isinstance(declared, list) else [declared]
+        for p in paths:
+            if isinstance(p, str) and p.strip().strip("/").strip() in ("", "."):
+                yield Violation(
+                    d / ".claude-plugin" / "plugin.json",
+                    f"skills path '{p}' resolves to the plugin root — declare a "
+                    f"subdirectory such as './skills/' instead",
+                )
