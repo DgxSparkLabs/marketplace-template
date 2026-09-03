@@ -36,10 +36,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from constructs import CONSTRUCTS
-from platforms import ClaudeCodePlatform
+from platforms import PLATFORMS
 from utils import (
     GENERATED,
-    MARKETPLACE_JSON,
     REPO_ROOT,
     _marketplace_author,
     _marketplace_description,
@@ -84,10 +83,25 @@ def _make_marketplace_entry(
     }
 
 
-def _write_marketplace_json(entries: list[dict]) -> None:
-    """Write the top-level marketplace.json from in-memory entries.
+def _entries_for_platform(platform, emitted: list[tuple]) -> list[dict]:
+    """Marketplace entries for the plugins ``platform`` supports.
 
-    Sorted by category then name for deterministic diffs.
+    ``emitted`` is the Phase-1 list of (construct, plugin_dir, plugin_json).
+    """
+    entries: list[dict] = []
+    for construct, plugin_dir, plugin_json in emitted:
+        if type(construct) in platform.supports and plugin_json is not None:
+            entries.append(
+                _make_marketplace_entry(plugin_json, plugin_dir, construct.category)
+            )
+    return entries
+
+
+def _write_marketplace_json(entries: list[dict], path: Path) -> None:
+    """Write a top-level marketplace.json from in-memory entries.
+
+    Sorted by category then name for deterministic diffs. ``path`` selects the
+    platform manifest (Claude ``.claude-plugin/`` or OMP ``.omp-plugin/``).
     """
     entries.sort(key=lambda e: (e["category"], e["name"]))
     manifest = {
@@ -96,8 +110,8 @@ def _write_marketplace_json(entries: list[dict]) -> None:
         "description": _marketplace_description(),
         "plugins": entries,
     }
-    MARKETPLACE_JSON.parent.mkdir(parents=True, exist_ok=True)
-    MARKETPLACE_JSON.write_text(_to_json(manifest), encoding="utf-8", newline="")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_to_json(manifest), encoding="utf-8", newline="")
 
 
 def _write_catalog(entries: list[dict]) -> None:
@@ -305,41 +319,44 @@ def _write_lint_rules_doc() -> None:
 
 
 def main() -> None:
-    marketplace_entries: list[dict] = []
-
     # Count of individual (non-bundle) plugins for the summary line.
     individual_plugin_count = 0
-
-    # Constructs that emit a Claude plugin (== entry in
-    # ``.claude-plugin/marketplace.json``). RuleConstruct is intentionally
-    # absent per F8: rules are a Claude memory feature, not a plugin
-    # component. See ClaudeCodePlatform.supports docstring in platforms.py
-    # and the project-memory branch (claude-qa RESEARCH.md, F8).
-    claude_supports = ClaudeCodePlatform.supports
 
     # Clear and recreate _generated/ (clean slate each run)
     if GENERATED.exists():
         shutil.rmtree(GENERATED)
     GENERATED.mkdir(parents=True)
 
-    # ── Phase 1: Individual construct plugins ──────────────────────────────────
-    # The marketplace entry is added when the construct is in
-    # ClaudeCodePlatform.supports.
+    # ── Phase 1: emit each construct's plugin dir once ─────────────────────────
+    # Claude Code owns the physical mirror; every platform's marketplace.json
+    # points at these same dirs. ``build_plugin_json`` is platform-neutral, so
+    # it is built once per plugin and reused when composing each platform's
+    # entries. A construct absent from every platform's ``supports`` still emits
+    # its dir but contributes no marketplace entry (e.g. F8: rules are a Claude
+    # memory feature, not a plugin — see platforms.py supports docstrings).
+    emitted: list[tuple] = []
     for construct in CONSTRUCTS.values():
-        is_claude_plugin = type(construct) in claude_supports
+        supported = any(
+            type(construct) in p.supports for p in PLATFORMS.values()
+        )
         for name in scan_source_dir(construct.source_directory):
             plugin_dir = GENERATED / f"{construct.prefix}-{name}"
             plugin_dir.mkdir(parents=True, exist_ok=True)
             construct.emit(name, plugin_dir)
-            if is_claude_plugin:
-                plugin_json = construct.build_plugin_json(name)
-                marketplace_entries.append(
-                    _make_marketplace_entry(plugin_json, plugin_dir, construct.category)
-                )
+            plugin_json = construct.build_plugin_json(name) if supported else None
+            emitted.append((construct, plugin_dir, plugin_json))
             individual_plugin_count += 1
 
-    # ── Phase 5: Top-level marketplace.json (from in-memory entries) ──────────
-    _write_marketplace_json(marketplace_entries)
+    # ── Phase 5: one top-level marketplace.json per platform ───────────────────
+    # Each platform lists the plugins its ``supports`` set covers. Claude Code's
+    # entries drive the catalog and summary below; OMP's are byte-identical
+    # today because both support the same constructs and share the mirror.
+    marketplace_entries: list[dict] = []
+    for platform in PLATFORMS.values():
+        entries = _entries_for_platform(platform, emitted)
+        _write_marketplace_json(entries, platform.marketplace_json)
+        if platform.name == "claude-code":
+            marketplace_entries = entries
 
     # ── Phase 7: the generated catalog & installation doc (drift-checked) ──────
     _write_catalog(marketplace_entries)
@@ -401,7 +418,9 @@ def _check_drift() -> int:
         REPO_ROOT / "_generated" / "CATALOG_AND_INSTALLATION_INSTRUCTIONS.md",  # Phase 7
         REPO_ROOT / "_generated" / "LINTING_RULES.md",                          # Phase 8
     ]
-    targets = [GENERATED, MARKETPLACE_JSON.parent] + root_generated
+    # Each platform's top-level manifest dir (.claude-plugin/, .omp-plugin/).
+    manifest_dirs = [p.marketplace_json.parent for p in PLATFORMS.values()]
+    targets = [GENERATED, *manifest_dirs] + root_generated
 
     before = snapshot_tree(targets)
     main()

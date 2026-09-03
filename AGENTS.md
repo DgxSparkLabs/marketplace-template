@@ -1,6 +1,6 @@
 # Agent instructions
 
-This is a fork-ready template marketplace for Claude Code skills — not a general software project. Identity lives in `src/.metadata-MARKETPLACE.toml`; contributor content lives under `src/skills/<name>/`; everything else under `_generated/` and `.claude-plugin/` is produced by `scripts/generate_manifest.py` and must never be hand-edited.
+This is a fork-ready template marketplace for Claude Code and OMP (Oh My Pi) skills — not a general software project. Identity lives in `src/.metadata-MARKETPLACE.toml`; contributor content lives under `src/skills/<name>/`; everything else under `_generated/`, `.claude-plugin/`, and `.omp-plugin/` is produced by `scripts/generate_manifest.py` and must never be hand-edited.
 
 ## Where to find things
 
