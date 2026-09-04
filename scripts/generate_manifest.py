@@ -40,10 +40,6 @@ from platforms import PLATFORMS
 from utils import (
     GENERATED,
     REPO_ROOT,
-    _marketplace_author,
-    _marketplace_description,
-    _marketplace_name,
-    _marketplace_version,
     _to_json,
     scan_source_dir,
     write_plugin_json,
@@ -97,19 +93,12 @@ def _entries_for_platform(platform, emitted: list[tuple]) -> list[dict]:
     return entries
 
 
-def _write_marketplace_json(entries: list[dict], path: Path) -> None:
-    """Write a top-level marketplace.json from in-memory entries.
+def _write_marketplace_json(manifest: dict, path: Path) -> None:
+    """Write a prebuilt top-level marketplace.json dict to ``path``.
 
-    Sorted by category then name for deterministic diffs. ``path`` selects the
-    platform manifest (Claude ``.claude-plugin/`` or OMP ``.omp-plugin/``).
+    ``newline=""`` preserves the LF endings from ``_to_json`` on Windows so the
+    byte-wise drift check stays green.
     """
-    entries.sort(key=lambda e: (e["category"], e["name"]))
-    manifest = {
-        "name": _marketplace_name(),
-        "owner": _marketplace_author(),
-        "description": _marketplace_description(),
-        "plugins": entries,
-    }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(_to_json(manifest), encoding="utf-8", newline="")
 
@@ -348,13 +337,19 @@ def main() -> None:
             individual_plugin_count += 1
 
     # ── Phase 5: one top-level marketplace.json per platform ───────────────────
-    # Each platform lists the plugins its ``supports`` set covers. Claude Code's
-    # entries drive the catalog and summary below; OMP's are byte-identical
-    # today because both support the same constructs and share the mirror.
+    # Each platform lists the plugins its ``supports`` set covers, then shapes
+    # its own top-level manifest via ``marketplace_manifest``: Claude keeps a
+    # top-level description and owner.url; OMP emits its documented native shape
+    # (metadata.description, {name, email?} owner/author). Entries are sorted by
+    # category then name for deterministic diffs; Claude Code's sorted entries
+    # drive the catalog and summary below.
     marketplace_entries: list[dict] = []
     for platform in PLATFORMS.values():
         entries = _entries_for_platform(platform, emitted)
-        _write_marketplace_json(entries, platform.marketplace_json)
+        entries.sort(key=lambda e: (e["category"], e["name"]))
+        _write_marketplace_json(
+            platform.marketplace_manifest(entries), platform.marketplace_json
+        )
         if platform.name == "claude-code":
             marketplace_entries = entries
 

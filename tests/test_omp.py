@@ -7,7 +7,10 @@
 
 Validates:
   - OmpPlatform is registered and points at .omp-plugin/marketplace.json
-  - .omp-plugin/marketplace.json exists, parses, and matches the Claude manifest
+  - .omp-plugin/marketplace.json is emitted in OMP's documented native shape
+    (metadata.description, {name, email?} owner/author; no top-level description)
+  - It shares the plugin core with the Claude manifest yet deliberately differs
+    from it (a first-party emission, not a byte copy)
   - Every OMP entry resolves to a real plugin.json via OMP's fallback path
   - The generated catalog carries an Oh My Pi install/uninstall block
 
@@ -47,7 +50,7 @@ class TestOmpRegistry(unittest.TestCase):
 
 
 class TestOmpManifest(unittest.TestCase):
-    """.omp-plugin/marketplace.json is generated and consistent with Claude's."""
+    """.omp-plugin/marketplace.json is emitted in OMP's documented native shape."""
 
     def test_exists_and_parses(self):
         self.assertTrue(
@@ -57,14 +60,53 @@ class TestOmpManifest(unittest.TestCase):
         data = _load(OMP_MARKETPLACE_JSON)
         self.assertIn("plugins", data)
         self.assertIn("owner", data)
-        self.assertIn("description", data)
+        self.assertIn("name", data["owner"])
 
-    def test_matches_claude_manifest(self):
-        # OMP prefers .omp-plugin/ but falls back to .claude-plugin/; the two
-        # manifests must stay identical so both harnesses install the same set.
-        self.assertEqual(
-            OMP_MARKETPLACE_JSON.read_bytes(), MARKETPLACE_JSON.read_bytes()
+    def test_native_shape(self):
+        """OMP documents the marketplace description under metadata.description
+        and owner/author as {name, email?} (no url); top-level description is not
+        an OMP field. See docs/platforms/omp.md section 2."""
+        data = _load(OMP_MARKETPLACE_JSON)
+        self.assertNotIn(
+            "description", data, "OMP manifest must not carry a top-level description"
         )
+        self.assertIsInstance(data.get("metadata"), dict)
+        self.assertTrue(data["metadata"].get("description"))
+        self.assertNotIn(
+            "url", data["owner"], "OMP owner must be limited to documented {name, email?}"
+        )
+        for entry in data["plugins"]:
+            with self.subTest(plugin=entry["name"]):
+                self.assertNotIn("url", entry["author"])
+
+    def test_shares_plugin_core_with_claude(self):
+        """The two manifests are not byte-identical, but every plugin entry
+        shares its core fields. When OMP must diverge further, shape it in
+        OmpPlatform.marketplace_manifest and keep this parity. See
+        docs/platforms/omp.md section 5."""
+        omp = _load(OMP_MARKETPLACE_JSON)
+        claude = _load(MARKETPLACE_JSON)
+        self.assertEqual(omp["name"], claude["name"])
+        omp_by_name = {e["name"]: e for e in omp["plugins"]}
+        claude_by_name = {e["name"]: e for e in claude["plugins"]}
+        self.assertEqual(set(omp_by_name), set(claude_by_name))
+        for name, ce in claude_by_name.items():
+            with self.subTest(plugin=name):
+                oe = omp_by_name[name]
+                for field in ("source", "description", "version", "category"):
+                    self.assertEqual(oe[field], ce[field])
+                self.assertEqual(oe["author"]["name"], ce["author"]["name"])
+
+    def test_diverges_from_claude(self):
+        """Anti-copy-cat guard: OMP is a first-party emission, not a byte copy
+        of the Claude manifest. Claude keeps a top-level description; OMP does
+        not. If this fails, the OMP shaping regressed to a copy."""
+        self.assertNotEqual(
+            OMP_MARKETPLACE_JSON.read_bytes(),
+            MARKETPLACE_JSON.read_bytes(),
+            "OMP manifest is a byte copy of Claude's — it must be OMP-shaped",
+        )
+        self.assertIn("description", _load(MARKETPLACE_JSON))
 
     def test_entries_resolve_via_fallback(self):
         # OMP resolves each entry's source dir, then reads its plugin manifest.

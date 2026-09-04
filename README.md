@@ -80,7 +80,7 @@ edit: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Roadmap
 
-Skills ship today on Claude Code and Oh My Pi (OMP). More capability types
+Skills ship today on Claude Code and [Oh My Pi (OMP)](docs/platforms/omp.md). More capability types
 (commands, agents, hooks, MCP servers, …) and more platforms (Codex, Gemini,
 Cursor, …) are planned and tracked in
 [governed re-expansion issues](https://github.com/DgxSparkLabs/marketplace-template/issues/18).

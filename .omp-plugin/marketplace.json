@@ -1,10 +1,12 @@
 {
   "name": "dgxsparklabs-template-marketplace",
   "owner": {
-    "name": "DgxSparkLabs",
-    "url": "https://github.com/DgxSparkLabs"
+    "name": "DgxSparkLabs"
   },
-  "description": "TEMPLATE marketplace - fork this to run your own agentic-capability marketplace. This is not the official DgxSparkLabs marketplace; official capabilities ship from dgxsparklabs-marketplace (github.com/DgxSparkLabs/marketplace).",
+  "metadata": {
+    "description": "TEMPLATE marketplace - fork this to run your own agentic-capability marketplace. This is not the official DgxSparkLabs marketplace; official capabilities ship from dgxsparklabs-marketplace (github.com/DgxSparkLabs/marketplace).",
+    "version": "1.0.0"
+  },
   "plugins": [
     {
       "name": "skill-example-multi",
@@ -12,8 +14,7 @@
       "description": "Two reference skills (notebook, status) demonstrating the multi-skill plugin layout.",
       "version": "1.0.0",
       "author": {
-        "name": "DgxSparkLabs",
-        "url": "https://github.com/DgxSparkLabs"
+        "name": "DgxSparkLabs"
       },
       "category": "skill"
     },
@@ -23,8 +24,7 @@
       "description": "Prints a minimal greeting plus a UTC timestamp. The smallest possible single-skill reference plugin - copy this layout for your own solo skill.",
       "version": "1.0.0",
       "author": {
-        "name": "DgxSparkLabs",
-        "url": "https://github.com/DgxSparkLabs"
+        "name": "DgxSparkLabs"
       },
       "category": "skill"
     },
@@ -34,8 +34,7 @@
       "description": "Operate your own capability marketplace: create one from the template, add capabilities, ship updates, and pull template upgrades.",
       "version": "1.0.0",
       "author": {
-        "name": "DgxSparkLabs",
-        "url": "https://github.com/DgxSparkLabs"
+        "name": "DgxSparkLabs"
       },
       "category": "skill"
     }
