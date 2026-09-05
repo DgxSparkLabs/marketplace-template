@@ -10,7 +10,7 @@ The generator turns skill sources under `src/skills/` into Claude Code and OMP (
 
 ## Sources of truth vs. generated
 
-Every path in the repo belongs to exactly one of the four buckets below — never two at once.
+Every file in the repo has exactly one owner.
 
 **Humans edit (source intent):**
 
