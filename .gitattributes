@@ -8,3 +8,10 @@
 # template updates. Forks: add your own lines to claim more files.
 README.md   merge=ours
 SECURITY.md merge=ours
+
+# Fork-owned extension zone (docs/UPDATING.md): a fork's own scripts, tests, and
+# workflows. The template ships nothing into these paths beyond the hello-world
+# example, so a conflict is only possible if a fork names a file exactly as the
+# template later does - merge=ours then keeps the fork's version whole-file.
+custom/**                      merge=ours
+.github/workflows/custom-*.yml merge=ours

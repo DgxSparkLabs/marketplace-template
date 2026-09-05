@@ -14,6 +14,8 @@ Validates:
 """
 from __future__ import annotations
 
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -214,6 +216,93 @@ class TestDriftGateReadOnly(unittest.TestCase):
             )
         finally:
             inv.write_bytes(original)
+
+class TestCustomZonePledge(unittest.TestCase):
+    """The template ships ONLY the hello-world example in the fork-owned zone.
+
+    Gated on template identity: this binds the TEMPLATE repo, never a fork. A
+    fork fills custom/ and .github/workflows/custom-*.yml with its own automation
+    and must not fail its own CI for doing exactly what the zone is for.
+    """
+
+    @unittest.skipUnless(
+        os.environ.get("GITHUB_REPOSITORY") == "DgxSparkLabs/marketplace-template",
+        "template self-check only (skipped on forks and locally)",
+    )
+    def test_only_the_example_ships(self):
+        custom = REPO_ROOT / "custom"
+        shipped = {
+            p.relative_to(custom).as_posix()
+            for p in custom.rglob("*")
+            if p.is_file() and "__pycache__" not in p.parts
+        }
+        self.assertEqual(
+            shipped,
+            {"README.md", "hello_custom.py", "tests/test_hello_custom.py"},
+            "custom/ must ship only the hello-world example",
+        )
+        custom_wfs = {
+            p.name for p in (REPO_ROOT / ".github" / "workflows").glob("custom-*.yml")
+        }
+        self.assertEqual(
+            custom_wfs, {"custom-hello.yml"},
+            "only the example custom-*.yml workflow may ship from the template",
+        )
+
+class TestApplyTemplateWorkflows(unittest.TestCase):
+    """The completion helper refreshes template workflows but preserves fork-only ones.
+
+    Reproduces the held-back-workflow completion against two LOCAL git repos (no
+    network): a "fork" with a fork-only custom-mine.yml plus an edited copy of the
+    template-shipped custom-hello.yml, and a "template" shipping stock + hello.
+    Asserts custom-mine.yml survives with fork content while template-shipped
+    names refresh - the property the old `git rm ... FETCH_HEAD` recipe broke.
+    """
+
+    def _git(self, *args, cwd):
+        subprocess.run(["git", *args], cwd=cwd, check=True,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def _init_repo(self, root, files):
+        root.mkdir(parents=True, exist_ok=True)
+        self._git("init", "-b", "main", cwd=root)
+        self._git("config", "user.email", "t@example.invalid", cwd=root)
+        self._git("config", "user.name", "test", cwd=root)
+        for rel, content in files.items():
+            p = root / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(content, encoding="utf-8")
+        self._git("add", "-A", cwd=root)
+        self._git("commit", "-m", "init", cwd=root)
+
+    def test_preserves_fork_only_and_refreshes_shipped(self):
+        import apply_template_workflows as helper
+        with tempfile.TemporaryDirectory() as t:
+            base = Path(t)
+            template, fork = base / "template", base / "fork"
+            self._init_repo(template, {
+                ".github/workflows/ci.yml": "TEMPLATE ci\n",
+                ".github/workflows/custom-hello.yml": "TEMPLATE hello\n",
+            })
+            self._init_repo(fork, {
+                ".github/workflows/ci.yml": "OLD ci\n",
+                ".github/workflows/custom-hello.yml": "FORK hello\n",
+                ".github/workflows/custom-mine.yml": "FORK mine\n",
+            })
+            cwd0 = Path.cwd()
+            os.chdir(fork)
+            try:
+                rc = helper.apply(template=str(template), ref="main")
+            finally:
+                os.chdir(cwd0)
+            self.assertEqual(rc, 0)
+            wf = fork / ".github" / "workflows"
+            self.assertEqual((wf / "custom-mine.yml").read_text(encoding="utf-8"),
+                             "FORK mine\n", "fork-only workflow must survive")
+            self.assertEqual((wf / "custom-hello.yml").read_text(encoding="utf-8"),
+                             "TEMPLATE hello\n", "template-shipped name must refresh")
+            self.assertEqual((wf / "ci.yml").read_text(encoding="utf-8"),
+                             "TEMPLATE ci\n", "stock workflow must refresh")
 
 class TestNewConstruct(unittest.TestCase):
     def test_kebab_regex(self):
