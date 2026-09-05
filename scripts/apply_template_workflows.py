@@ -28,7 +28,6 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 WORKFLOWS = Path(".github/workflows")
@@ -47,7 +46,7 @@ def _git(*args: str, capture: bool = False) -> str:
 
 def template_workflow_names(ref: str = "FETCH_HEAD") -> set[str]:
     """Basenames of the workflow files the template ships at ``ref``."""
-    out = _git("ls-tree", "-r", "--name-only", ref, "--", str(WORKFLOWS), capture=True)
+    out = _git("ls-tree", "-r", "--name-only", ref, "--", WORKFLOWS.as_posix(), capture=True)
     return {Path(line).name for line in out.splitlines() if line.strip()}
 
 
@@ -68,18 +67,18 @@ def apply(template: str, ref: str) -> int:
     preserve = fork_only(local_workflow_names(), template_workflow_names())
     # Stash the fork-only workflows, hard-refresh the directory from the template
     # tree (this is what applies template additions, edits, AND deletions), then
-    # put the fork-only ones back so the refresh never eats them.
-    with tempfile.TemporaryDirectory() as tmp:
-        saved: dict[str, bytes] = {
-            name: (WORKFLOWS / name).read_bytes() for name in preserve
-        }
-        if WORKFLOWS.exists():
-            _git("rm", "-rq", str(WORKFLOWS))
-        _git("checkout", "FETCH_HEAD", "--", str(WORKFLOWS))
-        WORKFLOWS.mkdir(parents=True, exist_ok=True)
-        for name, blob in saved.items():
-            (WORKFLOWS / name).write_bytes(blob)
-    _git("add", str(WORKFLOWS))
+    # put the fork-only ones back so the refresh never eats them. Pathspecs use
+    # POSIX separators so git sees the tree on Windows too.
+    saved: dict[str, bytes] = {
+        name: (WORKFLOWS / name).read_bytes() for name in preserve
+    }
+    if WORKFLOWS.exists():
+        _git("rm", "-rq", WORKFLOWS.as_posix())
+    _git("checkout", "FETCH_HEAD", "--", WORKFLOWS.as_posix())
+    WORKFLOWS.mkdir(parents=True, exist_ok=True)
+    for name, blob in saved.items():
+        (WORKFLOWS / name).write_bytes(blob)
+    _git("add", WORKFLOWS.as_posix())
     kept = ", ".join(sorted(preserve)) or "(none)"
     print(f"Applied template workflows; preserved fork-only: {kept}")
     print("Review, commit, and push to finish the update.")
