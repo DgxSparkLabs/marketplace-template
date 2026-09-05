@@ -8,3 +8,6 @@
 # template updates. Forks: add your own lines to claim more files.
 README.md   merge=ours
 SECURITY.md merge=ours
+
+custom/**                      merge=ours
+.github/workflows/custom-*.yml merge=ours
